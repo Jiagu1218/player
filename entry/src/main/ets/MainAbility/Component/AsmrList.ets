@@ -57,12 +57,6 @@ export struct AsmrList{
       ,'https://cdn.hentaiasmr.moe/asmr4/RJ382541.mp3'
       ,''
       ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/06/rj382541_img_main.jpg'
-      ,135,0,0),
-    new ASMRData(0,0
-      ,'[RJ382541] 獣も触手もおっきすぎ!こんな苦しいのになんで気持ちいいの…【CV:篠ノ井凛】'
-      ,'https://cdn.hentaiasmr.moe/asmr4/RJ382541.mp3'
-      ,''
-      ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/06/rj382541_img_main.jpg'
       ,135,0,0)
   )
 
