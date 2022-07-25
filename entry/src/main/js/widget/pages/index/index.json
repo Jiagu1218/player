@@ -1,0 +1,15 @@
+{
+  "data": {
+    "title": "Title",
+    "detail": "Text"
+  },
+  "actions": {
+    "routerEvent": {
+      "action": "router",
+      "abilityName": "com.xjg.player.MainAbility",
+      "params": {
+        "message": "add detail"
+      }
+    }
+  }
+}

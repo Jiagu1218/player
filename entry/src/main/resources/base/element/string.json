@@ -1,0 +1,36 @@
+{
+  "string": [
+    {
+      "name": "entry_desc",
+      "value": "description"
+    },
+    {
+      "name": "MainAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "MainAbility_label",
+      "value": "label"
+    },
+    {
+      "name": "form_FormAbility_desc",
+      "value": "form_description"
+    },
+    {
+      "name": "form_FormAbility_label",
+      "value": "form_label"
+    },
+    {
+      "name": "ASMRAbility_desc",
+      "value": "hap sample empty service"
+    },
+    {
+      "name": "ASMRServiceAbility_desc",
+      "value": "hap sample empty service"
+    },
+    {
+      "name": "DataAbility_desc",
+      "value": "hap sample empty provider"
+    }
+  ]
+}
