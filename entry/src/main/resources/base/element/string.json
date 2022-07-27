@@ -31,6 +31,10 @@
     {
       "name": "DataAbility_desc",
       "value": "hap sample empty provider"
+    },
+    {
+      "name": "DataAbility1_desc",
+      "value": "hap sample empty provider"
     }
   ]
 }

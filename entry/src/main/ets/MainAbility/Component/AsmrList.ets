@@ -1,7 +1,11 @@
 import { ASMRData } from '../../entity/ASMRData';
 import { logInfo } from '../../Util/LogUtil'
 import {AsmrCard} from '../Component/AsmrCard'
-
+import { getInfo , subHtml} from '../../Util/HttpUtil'
+import featureAbility from '@ohos.ability.featureAbility'
+import rpc from "@ohos.rpc"
+//import dataAbility from '@ohos.data.dataAbility'
+//import {DATA_HElPER,COLUMNS,BASE_URI} from '../../constant/ColletcitonDataHelperConstant'
 
 @Preview
 @Component
@@ -63,6 +67,7 @@ export struct AsmrList{
   //列表是否在加载
   @State loading:boolean = false
   @State pageIndex:number=1
+  private remote:rpc.IRemoteObject = null
   private itemClick:(item:ASMRData)=>void
   private scroller: Scroller = new Scroller()
 
@@ -73,16 +78,33 @@ export struct AsmrList{
       console.log(event.repeat.toString())
     }
   }
+  aboutToAppear(){
+    featureAbility.connectAbility(
+      {
+        bundleName: "com.xjg.player",
+        abilityName: "com.example.entry.ASMRServiceAbility"
+      },
+      {
+        onConnect:(element, remote)=>{
+          //todo 通讯
+          this.remote = remote
+          logInfo("Connect")
+        },
+        onDisconnect:(elementName)=>{
+          logInfo("onDisconnect")
+          this.remote = null
+        },
+        onFailed:(code)=>{logInfo("onFailed")}
 
+      }
+    )
+  }
   /**监听列表变化,更新列表长度和是否在加载
    * */
   dataChange(){
     this.loading = false
   }
 
-  aboutToAppear(){
-    //this.page()
-  }
   build(){
     Stack({alignContent:Alignment.BottomEnd}){
       Scroll(this.scroller){
@@ -105,12 +127,48 @@ export struct AsmrList{
 
       }
       .scrollBarColor('red')
-      .onScrollEdge((event) => {
-        console.log(event.toFixed())
+      .onScrollEdge(async(event) => {
         if(Edge.Center==event){
-          console.log("Center")
+          logInfo("Center")
+
           //todo 请求新数据
-          this.pageIndex = this.pageIndex+1
+          if(this.remote != null && !this.remote.isObjectDead() && !this.loading){
+            this.loading = true
+            let url = 'https://www.hentaiasmr.moe/page/'+this.pageIndex+'/?filter=latest'
+            let html = await getInfo(url,{'pageIndex':0},'')
+
+            let data = rpc.MessageParcel.create()
+            //设置大小避免超出存储容量报错
+            data.setCapacity((html.length+100)*8)
+            let htmlArray:string[] = subHtml(html)
+            data.writeInt(htmlArray.length)
+            data.writeStringArray(htmlArray)
+            let reply = new rpc.MessageParcel()
+            let options = new rpc.MessageOption()
+            // @ts-ignore
+            this.remote.sendRequest(2, data, reply, options).then((result:rpc.SendRequestResult)=>{
+              if(result.errCode == 0){
+                //对称式序列化否者会报错
+                try{
+                  let dataLength = result.reply.readInt()
+                  if(dataLength>0){
+                    let ret = new Array<ASMRData>()
+                    for(let i=0;i<dataLength;i++){
+                      ret.push(new ASMRData(0,0,'','','','',0,0,0))
+                    }
+                    result.reply.readSequenceableArray(ret)
+                    this.data.push(...ret)
+                    this.pageIndex = this.pageIndex+1
+                  }
+                }catch(e) {
+                  logInfo("Error"+e.message)
+                }
+                logInfo('请求成功')
+              }else{
+                logInfo('请求失败')
+              }
+            })
+          }
         }else if(Edge.Top==event){
           console.log("Top")
         }else if(Edge.Bottom==event){
@@ -128,8 +186,26 @@ export struct AsmrList{
 
       Button('top')
       .type(ButtonType.Circle).margin({bottom:'50px',right:'50px'})
-      .onClick(()=>{
+      .onClick(async()=>{
         this.scroller.scrollEdge(Edge.Top)
+        //dataability
+//        let valuesBuckets =new Array()
+//        this.data.forEach((data) => {
+//          valuesBuckets.push(data.valuesBucket())
+//        })
+//        let predicates = new dataAbility.DataAbilityPredicates()
+//        predicates.equalTo('id',1)
+//        DATA_HElPER.query(BASE_URI,COLUMNS,predicates,(error,resultSet)=>{
+//          logInfo(error.code+"")
+//          while(resultSet.goToNextRow()){
+//            logInfo(resultSet.getString(resultSet.getColumnIndex('title')))
+//          }
+//        } )
+//        DATA_HElPER.batchInsert(BASE_URI, valuesBuckets,(error,id)=> {
+//          let e=error
+//          logInfo('插入:' + id)
+//        })
+
       })
     }
   }

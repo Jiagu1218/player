@@ -106,12 +106,13 @@
         "type": "service"
       },
       {
-        "name": ".DataAbility",
+        "name": ".CollectionDataAbility",
         "srcLanguage": "ets",
         "srcPath": "CollectionDataAbility",
         "icon": "$media:icon",
         "description": "$string:DataAbility_desc",
         "type": "data",
+        "visible": true,
         "uri": "dataability://com.xjg.player.CollectionDataAbility"
       }
     ],

@@ -8,7 +8,17 @@ import abilityAccessCtrl from '@ohos.abilityAccessCtrl'
 export default {
   onCreate() {
     console.info('Application onCreate')
-
+    //启动serviceAbility
+    featureAbility.startAbility(
+      {
+        want:
+        {
+          bundleName: "com.xjg.player",
+          //PS:module - package + abilityName
+          abilityName: "com.example.entry.ASMRServiceAbility"
+        },
+      }
+    )
     //todo 权限校验获取
     let AtManager = abilityAccessCtrl.createAtManager();
     let tokenID = 0;
@@ -24,4 +34,5 @@ export default {
   onDestroy() {
     console.info('Application onDestroy')
   },
+
 }
