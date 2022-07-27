@@ -41,61 +41,16 @@ export default {
                 if(code == 1){
                     //获取musicUrl
                     logInfo('获取musicUrl')
-                    let html = data.readString()
+                    let size = data.readInt()
+                    logInfo('size: ' + size)
+                    let strArray = new Array<string>()
+                    for (let i = 0; i < size; i++) {
+                        strArray.push('')
+                    }
+                    data.readStringArray(strArray)
+                    let html = ''.concat(...strArray)
                     reply.writeString(getMusicUrl(html))
                 }else if(code == 2){
-
-//                    let data:Array<ASMRData> = new Array<ASMRData>(
-//                        new ASMRData(0,0
-//                          ,'[RJ398341] 【背徳交尾】一緒にお仕事、サボりませんか?～優等生JKの誘惑に負けて快感を貪る～'
-//                          ,'https://cdn.hentaiasmr.moe/asmr4/RJ395660.mp3'
-//                          ,''
-//                          ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/07/rj398341_img_main.jpg'
-//                          ,24000,0,0)
-//                        ,
-//                        new ASMRData(0,0
-//                          ,'[RJ382541] 獣も触手もおっきすぎ!こんな苦しいのになんで気持ちいいの…【CV:篠ノ井凛】'
-//                          ,'https://cdn.hentaiasmr.moe/asmr4/RJ382541.mp3'
-//                          ,''
-//                          ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/06/rj382541_img_main.jpg'
-//                          ,135,0,0),
-//                        new ASMRData(0,0
-//                          ,'[RJ382541] 獣も触手もおっきすぎ!こんな苦しいのになんで気持ちいいの…【CV:篠ノ井凛】'
-//                          ,'https://cdn.hentaiasmr.moe/asmr4/RJ382541.mp3'
-//                          ,''
-//                          ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/06/rj382541_img_main.jpg'
-//                          ,135,0,0),
-//                        new ASMRData(0,0
-//                          ,'[RJ382541] 獣も触手もおっきすぎ!こんな苦しいのになんで気持ちいいの…【CV:篠ノ井凛】'
-//                          ,'https://cdn.hentaiasmr.moe/asmr4/RJ382541.mp3'
-//                          ,''
-//                          ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/06/rj382541_img_main.jpg'
-//                          ,135,0,0),
-//                        new ASMRData(0,0
-//                          ,'[RJ382541] 獣も触手もおっきすぎ!こんな苦しいのになんで気持ちいいの…【CV:篠ノ井凛】'
-//                          ,'https://cdn.hentaiasmr.moe/asmr4/RJ382541.mp3'
-//                          ,''
-//                          ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/06/rj382541_img_main.jpg'
-//                          ,135,0,0),
-//                        new ASMRData(0,0
-//                          ,'[RJ382541] 獣も触手もおっきすぎ!こんな苦しいのになんで気持ちいいの…【CV:篠ノ井凛】'
-//                          ,'https://cdn.hentaiasmr.moe/asmr4/RJ382541.mp3'
-//                          ,''
-//                          ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/06/rj382541_img_main.jpg'
-//                          ,135,0,0),
-//                        new ASMRData(0,0
-//                          ,'[RJ382541] 獣も触手もおっきすぎ!こんな苦しいのになんで気持ちいいの…【CV:篠ノ井凛】'
-//                          ,'https://cdn.hentaiasmr.moe/asmr4/RJ382541.mp3'
-//                          ,''
-//                          ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/06/rj382541_img_main.jpg'
-//                          ,135,0,0),
-//                        new ASMRData(0,0
-//                          ,'[RJ382541] 獣も触手もおっきすぎ!こんな苦しいのになんで気持ちいいの…【CV:篠ノ井凛】'
-//                          ,'https://cdn.hentaiasmr.moe/asmr4/RJ382541.mp3'
-//                          ,''
-//                          ,'https://www.hentaiasmr.moe/wp-content/uploads/2022/06/rj382541_img_main.jpg'
-//                          ,135,0,0)
-//                    )
                     //获取asmrList
                     logInfo('获取asmrList')
                     let size = data.readInt()
