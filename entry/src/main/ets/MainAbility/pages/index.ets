@@ -1,7 +1,4 @@
 import { ASMRData } from '../../entity/ASMRData';
-import mediaQuery_WFRd from '@ohos.mediaquery'
-import featureAbility from '@ohos.ability.featureAbility'
-import hilog from '@ohos.hilog'
 import { logInfo } from '../../Util/LogUtil'
 import {AsmrList} from '../Component/AsmrList'
 import {Player} from '../Component/Player'
@@ -16,10 +13,9 @@ struct Index {
 
   private addPlayListItem=(item:ASMRData)=>{
     console.log(item.title)
-    console.log('',this)
-
-    console.log(this.playerList == undefined?'111':'222')
-    this.playerList.push(item)
+    if(this.playerList.findIndex((music)=>{return music.articleId == item.articleId})<0){
+      this.playerList.push(item)
+    }
   }
 
   build() {
@@ -34,29 +30,6 @@ struct Index {
 
         TabContent(){
           Player({musicList:$playerList})
-//          Text(`${this.message}`)
-//            .width("300vp")
-//            .height("60vp")
-//            .fontSize("50fp")
-//            .fontWeight(FontWeight.Bold)
-//            .textAlign(TextAlign.Center)
-//            .onClick(()=>{
-//              hilog.info(0x0001, "testTag", "%{public}s", "onClick");
-//              //连接本地Service
-//              let promise = featureAbility.startAbility(
-//                {
-//                  want:
-//                  {
-//                    bundleName: "com.xjg.player",
-//                    //PS:module - package + abilityName
-//                    abilityName: "com.example.entry.ASMRServiceAbility",
-//                  },
-//
-//                }
-//              ).catch(error=>{
-//                hilog.error(0x0001, "testTag", "%{public}s", error.toString());
-//              })
-//            })
         }
         .tabBar({text: '播放'})
         .width('100%')

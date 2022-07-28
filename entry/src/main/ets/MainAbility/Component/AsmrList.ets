@@ -30,10 +30,12 @@ export struct AsmrList{
 
   //列表是否在加载
   @State loading:boolean = false
-  @State pageIndex:number=1
+  @State @Watch('changeIndex') pageIndex:number=1
   private remote:rpc.IRemoteObject = null
   private itemClick:(item:ASMRData)=>void
   private scroller: Scroller = new Scroller()
+  private urlBase:string = 'https://www.hentaiasmr.moe'
+  private url:string = this.urlBase+'/page/'+this.pageIndex+'/?filter=latest'
 
   private imgLongPressCallback = (event: GestureEvent)=>{
     logInfo(event.repeat.toString())
@@ -41,6 +43,11 @@ export struct AsmrList{
     if(event.repeat){
       console.log(event.repeat.toString())
     }
+  }
+
+  //页数改变后改变url
+  changeIndex(){
+    this.url =  this.urlBase+'/page/'+this.pageIndex+'/?filter=latest'
   }
   aboutToAppear(){
     featureAbility.connectAbility(
@@ -54,6 +61,7 @@ export struct AsmrList{
           this.remote = remote
           logInfo("Connect")
           //加载第一页列表
+          this.data.length = 0
           this.getPage()
         },
         onDisconnect:(elementName)=>{
@@ -112,10 +120,8 @@ export struct AsmrList{
   }
 
   async getMusicUrl(pageUrl):Promise<string>{
-    if(this.remote != null && !this.remote.isObjectDead() && !this.loading){
-      this.loading = true
+    if(this.remote != null && !this.remote.isObjectDead()){
       let html = await getInfo(pageUrl,{'pageIndex':0},'')
-
       let data = rpc.MessageParcel.create()
       //设置大小避免超出存储容量报错
       data.setCapacity((html.length+100)*8)
@@ -124,93 +130,107 @@ export struct AsmrList{
       data.writeStringArray(htmlArray)
       let reply = new rpc.MessageParcel()
       let options = new rpc.MessageOption()
+
       // @ts-ignore
-      return await this.remote.sendRequest(1, data, reply, options).then((result:rpc.SendRequestResult)=>{
-        if(result.errCode == 0){
-          //对称式序列化否者会报错
-          try{
-            return reply.readString()
-          }catch(e) {
-            logInfo("Error"+e.message)
-          }
-          logInfo('请求成功')
-        }else{
-          logInfo('请求失败')
+      let result:rpc.SendRequestResult = await this.remote.sendRequest(1, data, reply, options)
+
+      if(result.errCode == 0){
+        //对称式序列化否者会报错
+        try{
+          return result.reply.readString()
+        }catch(e) {
+          logInfo("Error"+e.message)
         }
-        return ''
-      })
+        logInfo('请求成功')
+      }else{
+        logInfo('请求失败')
+      }
+      return ''
+
     }
   }
 
   build(){
-    Stack({alignContent:Alignment.BottomEnd}){
-      Scroll(this.scroller){
-        List({space:5}){
-          ForEach(this.data,(data:ASMRData)=>{
-            ListItem(){
-              AsmrCard({
-                data:data,
-                imgLongPressCallback:this.imgLongPressCallback
+    Flex(){
+      Stack({alignContent:Alignment.BottomEnd}){
+        Column(){
+          Scroll(this.scroller){
+            List({space:5}){
+              ForEach(this.data,(data:ASMRData,index:number)=>{
+                ListItem(){
+                  AsmrCard({
+                    data:data,
+                    imgLongPressCallback:this.imgLongPressCallback
+                  })
+                }
+                .width('100%')
+                .height('20%')
+                .onClick(event=>{
+                  //todo 列表点击事件
+                  if(data.musicUrl != null && data.musicUrl.length >0){
+                    this.itemClick(data)
+                  }else{
+                    this.getMusicUrl(data.pageUrl).then(musicUrl=>{
+                      if(musicUrl.length > 0){
+                        data.musicUrl = musicUrl
+                        this.data[index].musicUrl = musicUrl
+                        logInfo('musicUrl'+musicUrl)
+                        this.itemClick(data)
+                      }else{
+                        //todo 提示无法获取链接
+                      }
+
+                    })
+                  }
+                })
               })
             }
-            .width('100%')
-            .height('20%')
-            .onClick(event=>{
-              //todo 列表点击事件
-              this.getMusicUrl(data.pageUrl).then(musicUrl=>{
-                data.musicUrl = musicUrl
-                logInfo(musicUrl)
-                this.itemClick(data)
-              })
 
-            })
+          }
+          .scrollBarColor('red')
+          .onScrollEdge((event) => {
+            if(Edge.Center==event){
+              logInfo("Center")
+              this.getPage()
+            }else if(Edge.Top==event){
+              console.log("Top")
+            }else if(Edge.Bottom==event){
+              console.log("Bottom")
+            }
           })
         }
+        .height('100%')
+        .width('100%')
 
+        Button('top')
+          .type(ButtonType.Circle).margin({bottom:'50px',right:'50px'})
+          .onClick(()=>{
+            this.scroller.scrollEdge(Edge.Top)
+            //dataability
+            //        let valuesBuckets =new Array()
+            //        this.data.forEach((data) => {
+            //          valuesBuckets.push(data.valuesBucket())
+            //        })
+            //        let predicates = new dataAbility.DataAbilityPredicates()
+            //        predicates.equalTo('id',1)
+            //        DATA_HElPER.query(BASE_URI,COLUMNS,predicates,(error,resultSet)=>{
+            //          logInfo(error.code+"")
+            //          while(resultSet.goToNextRow()){
+            //            logInfo(resultSet.getString(resultSet.getColumnIndex('title')))
+            //          }
+            //        } )
+            //        DATA_HElPER.batchInsert(BASE_URI, valuesBuckets,(error,id)=> {
+            //          let e=error
+            //          logInfo('插入:' + id)
+            //        })
+
+          })
       }
-      .scrollBarColor('red')
-      .onScrollEdge((event) => {
-        if(Edge.Center==event){
-          logInfo("Center")
-          this.getPage()
-        }else if(Edge.Top==event){
-          console.log("Top")
-        }else if(Edge.Bottom==event){
-          console.log("Bottom")
-        }else if(Edge.Start==event){
-          console.log("Start")
-        }else if(Edge.End==event){
-          console.log("End")
-        }else if(Edge.Middle==event){
-          console.log("Middle")
-        }else if(Edge.Baseline==event) {
-          console.log("Baseline")
-        }
-      })
-
-      Button('top')
-      .type(ButtonType.Circle).margin({bottom:'50px',right:'50px'})
-      .onClick(()=>{
-        this.scroller.scrollEdge(Edge.Top)
-        //dataability
-//        let valuesBuckets =new Array()
-//        this.data.forEach((data) => {
-//          valuesBuckets.push(data.valuesBucket())
-//        })
-//        let predicates = new dataAbility.DataAbilityPredicates()
-//        predicates.equalTo('id',1)
-//        DATA_HElPER.query(BASE_URI,COLUMNS,predicates,(error,resultSet)=>{
-//          logInfo(error.code+"")
-//          while(resultSet.goToNextRow()){
-//            logInfo(resultSet.getString(resultSet.getColumnIndex('title')))
-//          }
-//        } )
-//        DATA_HElPER.batchInsert(BASE_URI, valuesBuckets,(error,id)=> {
-//          let e=error
-//          logInfo('插入:' + id)
-//        })
-
-      })
+      .height('100%')
+      .width('100%')
     }
+    .width('100%')
+    .height('100%')
+
   }
 }

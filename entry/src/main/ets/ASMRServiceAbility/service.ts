@@ -40,7 +40,7 @@ export default {
             onRemoteRequest(code: number, data: rpc.MessageParcel, reply: rpc.MessageParcel, options: rpc.MessageOption){
                 if(code == 1){
                     //获取musicUrl
-                    logInfo('获取musicUrl')
+
                     let size = data.readInt()
                     logInfo('size: ' + size)
                     let strArray = new Array<string>()
@@ -49,7 +49,9 @@ export default {
                     }
                     data.readStringArray(strArray)
                     let html = ''.concat(...strArray)
-                    reply.writeString(getMusicUrl(html))
+                    let musicUrl = getMusicUrl(html)
+                    logInfo('获取musicUrl'+musicUrl)
+                    reply.writeString(musicUrl)
                 }else if(code == 2){
                     //获取asmrList
                     logInfo('获取asmrList')
