@@ -121,6 +121,7 @@ export struct Player{
 
   }
 
+  //todo 处理横屏下的布局
   build(){
     Flex({direction:FlexDirection.Column}){
       Flex({justifyContent:FlexAlign.Center,alignItems:ItemAlign.Center,direction:FlexDirection.Column}){

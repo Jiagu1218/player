@@ -28,6 +28,6 @@ export struct AsmrCard{
         Text(`观看 ${this.data.views}`).fontSize('20')
       }
       .width('60%')
-    }
+    }.height('250lpx')
   }
 }

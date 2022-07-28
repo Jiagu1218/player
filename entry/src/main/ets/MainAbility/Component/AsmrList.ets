@@ -30,13 +30,20 @@ export struct AsmrList{
 
   //列表是否在加载
   @State loading:boolean = false
+  //当前页
   @State @Watch('changeIndex') pageIndex:number=1
+  //与ASMRServiceAbility建立链接返回的对象，用于通信
   private remote:rpc.IRemoteObject = null
+  //ListItem 点击事件
   private itemClick:(item:ASMRData)=>void
+  //滚动页面控制器
   private scroller: Scroller = new Scroller()
+  //Navigation 搜索框控制器
+  private searchController: SearchController = new SearchController()
+  //网站
   private urlBase:string = 'https://www.hentaiasmr.moe'
+  //数据来源url
   private url:string = this.urlBase+'/page/'+this.pageIndex+'/?filter=latest'
-
   private imgLongPressCallback = (event: GestureEvent)=>{
     logInfo(event.repeat.toString())
     //todo 长按保存图片
@@ -50,6 +57,7 @@ export struct AsmrList{
     this.url =  this.urlBase+'/page/'+this.pageIndex+'/?filter=latest'
   }
   aboutToAppear(){
+    //与ASMRServiceAbility 建立通信
     featureAbility.connectAbility(
       {
         bundleName: "com.xjg.player",
@@ -57,7 +65,6 @@ export struct AsmrList{
       },
       {
         onConnect:(element, remote)=>{
-          //todo 通讯
           this.remote = remote
           logInfo("Connect")
           //加载第一页列表
@@ -82,8 +89,8 @@ export struct AsmrList{
   async getPage(){
     if(this.remote != null && !this.remote.isObjectDead() && !this.loading){
       this.loading = true
-      let url = 'https://www.hentaiasmr.moe/page/'+this.pageIndex+'/?filter=latest'
-      let html = await getInfo(url,{'pageIndex':0},'')
+//      let url = 'https://www.hentaiasmr.moe/page/'+this.pageIndex+'/?filter=latest'
+      let html = await getInfo(this.url,{'pageIndex':0},'')
 
       let data = rpc.MessageParcel.create()
       //设置大小避免超出存储容量报错
@@ -146,91 +153,105 @@ export struct AsmrList{
         logInfo('请求失败')
       }
       return ''
-
     }
   }
 
-  build(){
-    Flex(){
-      Stack({alignContent:Alignment.BottomEnd}){
-        Column(){
-          Scroll(this.scroller){
-            List({space:5}){
-              ForEach(this.data,(data:ASMRData,index:number)=>{
-                ListItem(){
-                  AsmrCard({
-                    data:data,
-                    imgLongPressCallback:this.imgLongPressCallback
-                  })
-                }
-                .width('100%')
-                .height('20%')
-                .onClick(event=>{
-                  //todo 列表点击事件
-                  if(data.musicUrl != null && data.musicUrl.length >0){
-                    this.itemClick(data)
-                  }else{
-                    this.getMusicUrl(data.pageUrl).then(musicUrl=>{
-                      if(musicUrl.length > 0){
-                        data.musicUrl = musicUrl
-                        this.data[index].musicUrl = musicUrl
-                        logInfo('musicUrl'+musicUrl)
-                        this.itemClick(data)
-                      }else{
-                        //todo 提示无法获取链接
-                      }
+  @Builder NavigationTitle(){
+    Search({
+      value:'',
+      placeholder:'搜索',
+      controller:this.searchController
+    })
+    .width('550lpx')
+    .textFont({size:'24',weight: 'bold'})
+    .onSubmit((value)=>{
+      //todo 重置列表数据和状态
+    })
+  }
 
+  build(){
+    Navigation(){
+        Stack({alignContent:Alignment.BottomEnd}){
+          Column(){
+            Scroll(this.scroller){
+              List({space:5}){
+                ForEach(this.data,(data:ASMRData,index:number)=>{
+                  ListItem(){
+                    AsmrCard({
+                      data:data,
+                      imgLongPressCallback:this.imgLongPressCallback
                     })
                   }
-                })
-              })
-            }
+                  .width('100%')
+//                  .height('20%')
+                  .onClick(event=>{
+                    //todo 列表点击事件
+                    if(data.musicUrl != null && data.musicUrl.length >0){
+                      this.itemClick(data)
+                    }else{
+                      this.getMusicUrl(data.pageUrl).then(musicUrl=>{
+                        if(musicUrl.length > 0){
+                          data.musicUrl = musicUrl
+                          this.data[index].musicUrl = musicUrl
+                          logInfo('musicUrl'+musicUrl)
+                          this.itemClick(data)
+                        }else{
+                          //todo 提示无法获取链接
+                        }
 
-          }
-          .scrollBarColor('red')
-          .onScrollEdge((event) => {
-            if(Edge.Center==event){
-              logInfo("Center")
-              this.getPage()
-            }else if(Edge.Top==event){
-              console.log("Top")
-            }else if(Edge.Bottom==event){
-              console.log("Bottom")
+                      })
+                    }
+                  })
+                })
+              }
+
             }
-          })
+            .scrollBarColor('red')
+            .onScrollEdge((event) => {
+              if(Edge.Center==event){
+                logInfo("Center")
+                this.getPage()
+              }else if(Edge.Top==event){
+                console.log("Top")
+              }else if(Edge.Bottom==event){
+                console.log("Bottom")
+              }
+            })
+          }
+          .height('100%')
+          .width('100%')
+
+          Button('top')
+            .type(ButtonType.Circle).margin({bottom:'50px',right:'50px'})
+            .onClick(()=>{
+              this.scroller.scrollEdge(Edge.Top)
+              //dataability
+              //        let valuesBuckets =new Array()
+              //        this.data.forEach((data) => {
+              //          valuesBuckets.push(data.valuesBucket())
+              //        })
+              //        let predicates = new dataAbility.DataAbilityPredicates()
+              //        predicates.equalTo('id',1)
+              //        DATA_HElPER.query(BASE_URI,COLUMNS,predicates,(error,resultSet)=>{
+              //          logInfo(error.code+"")
+              //          while(resultSet.goToNextRow()){
+              //            logInfo(resultSet.getString(resultSet.getColumnIndex('title')))
+              //          }
+              //        } )
+              //        DATA_HElPER.batchInsert(BASE_URI, valuesBuckets,(error,id)=> {
+              //          let e=error
+              //          logInfo('插入:' + id)
+              //        })
+
+            })
         }
         .height('100%')
         .width('100%')
 
-        Button('top')
-          .type(ButtonType.Circle).margin({bottom:'50px',right:'50px'})
-          .onClick(()=>{
-            this.scroller.scrollEdge(Edge.Top)
-            //dataability
-            //        let valuesBuckets =new Array()
-            //        this.data.forEach((data) => {
-            //          valuesBuckets.push(data.valuesBucket())
-            //        })
-            //        let predicates = new dataAbility.DataAbilityPredicates()
-            //        predicates.equalTo('id',1)
-            //        DATA_HElPER.query(BASE_URI,COLUMNS,predicates,(error,resultSet)=>{
-            //          logInfo(error.code+"")
-            //          while(resultSet.goToNextRow()){
-            //            logInfo(resultSet.getString(resultSet.getColumnIndex('title')))
-            //          }
-            //        } )
-            //        DATA_HElPER.batchInsert(BASE_URI, valuesBuckets,(error,id)=> {
-            //          let e=error
-            //          logInfo('插入:' + id)
-            //        })
-
-          })
-      }
-      .height('100%')
-      .width('100%')
     }
-    .width('100%')
-    .height('100%')
-
+    .hideBackButton(true)
+    .menus([{value: '时间'}, {value: '观看数'}, {value: '时长'}, {value: '热门'},{value: '随机'}])
+    .hideToolBar(true)
+    .title(this.NavigationTitle())
   }
 }
