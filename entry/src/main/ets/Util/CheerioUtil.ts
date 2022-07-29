@@ -14,9 +14,10 @@ function getMusicUrl(html):string {
  *获取列表信息
   */
 function getListInfo(html:String):Array<ASMRData> {
+    logInfo("getListInfo")
     const $ = cheerio.load(html)
     let data = new Array<ASMRData>();
-    $('.videos-list>article').each((index,item)=>{
+    $('article').each((index,item)=>{
         let article = $(item)
         //id
         let articleId = Number.parseInt(article.attr('data-post-id'))
