@@ -70,6 +70,7 @@ export default {
                 }else if(code == 3){
                     reply.writeString('返回')
                 }
+                data.reclaim()
                 return true
             }
         }
