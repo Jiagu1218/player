@@ -4,6 +4,7 @@ import {AsmrCard} from '../Component/AsmrCard'
 import { getInfo , subHtml} from '../../Util/HttpUtil'
 import featureAbility from '@ohos.ability.featureAbility'
 import rpc from "@ohos.rpc"
+import Url from '@ohos.url'
 //import dataAbility from '@ohos.data.dataAbility'
 //import {DATA_HElPER,COLUMNS,BASE_URI} from '../../constant/ColletcitonDataHelperConstant'
 
@@ -31,19 +32,23 @@ export struct AsmrList{
   //列表是否在加载
   @State loading:boolean = false
   //当前页
-  @State @Watch('changeIndex') pageIndex:number=1
+  private pageIndex:number=1
   //与ASMRServiceAbility建立链接返回的对象，用于通信
   private remote:rpc.IRemoteObject = null
   //ListItem 点击事件
   private itemClick:(item:ASMRData)=>void
   //滚动页面控制器
   private scroller: Scroller = new Scroller()
-  //Navigation 搜索框控制器
-  private searchController: SearchController = new SearchController()
+  //菜单（下拉框选项）
+  private menus = [{value: '时间'}, {value: '观看数'}, {value: '时长'}, {value: '热门'},{value: '随机'}]
+  //排序
+  private filter:string = 'latest'
   //网站
   private urlBase:string = 'https://www.hentaiasmr.moe'
   //数据来源url
-  private url:string = this.urlBase+'/page/'+this.pageIndex+'/?filter=latest'
+  private url:string = this.urlBase+'/page/'+this.pageIndex+'/?filter='+this.filter
+
+  @State searchText:string = ''
   private imgLongPressCallback = (event: GestureEvent)=>{
     logInfo(event.repeat.toString())
     //todo 长按保存图片
@@ -52,11 +57,12 @@ export struct AsmrList{
     }
   }
 
-  //页数改变后改变url
-  changeIndex(){
-    this.url =  this.urlBase+'/page/'+this.pageIndex+'/?filter=latest'
-  }
   aboutToAppear(){
+    //用bind绑定防止this指向改变
+    this.connectASMRService(this.getPage.bind(this))
+  }
+  //链接服务
+  connectASMRService(callback?:Function){
     //与ASMRServiceAbility 建立通信
     featureAbility.connectAbility(
       {
@@ -67,9 +73,10 @@ export struct AsmrList{
         onConnect:(element, remote)=>{
           this.remote = remote
           logInfo("Connect")
-          //加载第一页列表
-          this.data.length = 0
-          this.getPage()
+          //链接成功调用回调
+          if (callback != null){
+            callback()
+          }
         },
         onDisconnect:(elementName)=>{
           logInfo("onDisconnect")
@@ -84,7 +91,17 @@ export struct AsmrList{
    * */
   dataChange(){
     this.loading = false
+    let base = new Url.URL(this.url)
+    let paramsObject = new Url.URLSearchParams(base.search.slice(1))
+    if(this.searchText != null && this.searchText.length>0){
+      paramsObject.set('s',this.searchText)
+      logInfo(paramsObject.toString())
+    }else{
+      paramsObject.delete('s')
+    }
+    this.url =  this.urlBase+'/page/'+this.pageIndex+'/?'+paramsObject.toString()
   }
+
   //获取列表
   async getPage(){
     if(this.remote != null && !this.remote.isObjectDead() && !this.loading){
@@ -112,19 +129,82 @@ export struct AsmrList{
                 ret.push(new ASMRData(0,0,'','','','',0,0,0))
               }
               result.reply.readSequenceableArray(ret)
-              this.data.push(...ret)
-              this.pageIndex = this.pageIndex+1
+              if(this.pageIndex === 1){
+                this.data.length = 0
+                setTimeout(()=>{
+                  this.data.push(...ret)
+                  this.pageIndex = this.pageIndex+1
+                  this.loading = false
+                },500)
+              }else{
+                this.data.push(...ret)
+                this.pageIndex = this.pageIndex+1
+                this.loading = false
+              }
             }
           }catch(e) {
             logInfo("Error"+e.message)
+            return false
           }
           logInfo('请求成功')
         }else{
+          return false
           logInfo('请求失败')
         }
       })
+    }else{
+      //从新建立链接
+      if(this.remote == null || this.remote.isObjectDead()){
+        this.connectASMRService()
+      }
+      logInfo('请求失败')
     }
+
   }
+
+  //搜索
+  search(value:string){
+    //先设值在改变index 避免index监听事件先执行读取不到
+    this.searchText = value
+    this.pageIndex = 1
+    this.dataChange()
+    this.getPage()
+
+  }
+
+//  transitionFilter(index:number){
+//
+//    switch (index) {
+//      case 0:this.filter = 'latest'
+//      break
+//      case 1:this.filter = 'most-viewed'
+//      break
+//      case 2:this.filter = 'longest'
+//      break
+//      case 3:this.filter = 'popular'
+//      break
+//      case 4:this.filter = 'random'
+//      break
+//      default:this.filter = 'latest'
+//    }
+//
+////    if(index == 0){
+////      this.filter = 'latest'
+////    }else if(index == 1){
+////      this.filter = 'most-viewed'
+////    }else if(index == 2){
+////      this.filter = 'longest'
+////    }else if(index == 3){
+////      this.filter = 'popular'
+////    }else if(index == 4){
+////      this.filter = 'random'
+////    }else{
+////      this.filter = 'latest'
+////    }
+//    this.data.length = 0
+//    this.pageIndex = 1
+//    this.getPage()
+//  }
 
   async getMusicUrl(pageUrl):Promise<string>{
     if(this.remote != null && !this.remote.isObjectDead()){
@@ -156,18 +236,33 @@ export struct AsmrList{
     }
   }
 
-  @Builder NavigationTitle(){
-    Search({
-      value:'',
-      placeholder:'搜索',
-      controller:this.searchController
-    })
-    .width('550lpx')
-    .textFont({size:'24',weight: 'bold'})
-    .onSubmit((value)=>{
-      //todo 重置列表数据和状态
-    })
+  //导航栏标题渲染
+  @Builder NavigationTitle(value:string){
+    Column(){
+      Search({
+        value:value,
+        placeholder:'搜索'
+      })
+        //    .width('450lpx')
+        .textFont({size:50,weight: 'bold'})
+        .onSubmit((value)=>{
+          this.search(value)
+        })
+    }
   }
+
+//  @Builder NavigationMenu(options:Array<SelectOption>,callback:(index:number) =>void){
+//    Column(){
+//      Select(options)
+//        .selected(0)
+//        .value('排序')
+//        .selectedOptionFont({size: '24',  family: 'serif', style: FontStyle.Normal })
+//        .optionFont({size: '20', family: 'serif', style: FontStyle.Normal })
+//        .selectedOptionBgColor('red')
+//        .onSelect(callback)
+//    }
+//
+//  }
 
   build(){
     Navigation(){
@@ -203,6 +298,16 @@ export struct AsmrList{
                     }
                   })
                 })
+                ListItem(){
+                  Column(){
+                    //todo 加载动画
+                    Text("加载中。。。").fontSize('20')
+                  }
+                  .alignItems(HorizontalAlign.Center)
+                  .justifyContent(FlexAlign.Center)
+                  .height('100lpx')
+                  .width('100%')
+                }.visibility(this.loading?Visibility.None:Visibility.Visible)
               }
 
             }
@@ -217,6 +322,7 @@ export struct AsmrList{
                 console.log("Bottom")
               }
             })
+
           }
           .height('100%')
           .width('100%')
@@ -250,8 +356,10 @@ export struct AsmrList{
 
     }
     .hideBackButton(true)
-    .menus([{value: '时间'}, {value: '观看数'}, {value: '时长'}, {value: '热门'},{value: '随机'}])
+//    .menus(this.NavigationMenu(this.menus,this.transitionFilter))
     .hideToolBar(true)
-    .title(this.NavigationTitle())
+    .title(this.NavigationTitle(this.searchText))
+//    .toolBar(this.NavigationMenu(this.menus,this.transitionFilter.bind(this)))
+
   }
 }
